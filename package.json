@@ -1,9 +1,13 @@
 {
-  "name": "embody",
+  "name": "0-60",
   "version": "0.0.0-development",
-  "description": "change name/author/etc of a working copy of an npm skeleton project",
+  "description": "clone a skeleton repo and set up CI build as fast as possible",
   "main": "index.js",
   "module": "es/index.js",
+  "bin": {
+    "060": "cli.js",
+    "0-60": "cli.js"
+  },
   "modules.root": "es",
   "sideEffects": false,
   "scripts": {
@@ -27,7 +31,7 @@
     "travis-deploy-once": "travis-deploy-once"
   },
   "config": {
-    "mocha": "-r babel-register ./test/**/*.js",
+    "mocha": "-r babel-register ./test/configure.js ./test/*.js",
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
@@ -44,17 +48,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jcoreio/embody.git"
+    "url": "https://github.com/jedwards1211/0-60.git"
   },
-  "keywords": [
-    "es2015"
-  ],
   "author": "Andy Edwards",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jcoreio/embody/issues"
+    "url": "https://github.com/jedwards1211/0-60/issues"
   },
-  "homepage": "https://github.com/jcoreio/embody#readme",
+  "homepage": "https://github.com/jedwards1211/0-60#readme",
   "devDependencies": {
     "@commitlint/cli": "^6.0.2",
     "@commitlint/config-conventional": "^6.0.2",
@@ -76,8 +77,9 @@
     "babel-register": "^6.23.0",
     "babel-runtime": "^6.23.0",
     "chai": "^4.1.2",
+    "chai-subset": "^1.6.0",
     "codecov": "^3.0.0",
-    "copy": "^0.3.0",
+    "copy": "^0.3.2",
     "eslint": "^3.15.0",
     "eslint-plugin-flowtype": "^2.30.0",
     "eslint-watch": "^3.0.0",
@@ -91,5 +93,13 @@
     "rimraf": "^2.6.0",
     "semantic-release": "^15.1.4",
     "travis-deploy-once": "^4.3.1"
+  },
+  "dependencies": {
+    "es6-promisify": "^6.0.0",
+    "fs-extra": "^7.0.0",
+    "glob": "^7.1.3",
+    "inquirer": "^6.2.0",
+    "lodash": "^4.17.11",
+    "promisify-child-process": "^2.1.0"
   }
 }
