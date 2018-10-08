@@ -5,8 +5,7 @@ import {spawn} from 'promisify-child-process'
 import inquirer from 'inquirer'
 import fs from 'fs-extra'
 import os from 'os'
-import setUpSkeleton from './setUpSkeleton'
-import parseRepositoryUrl from './parseRepositoryUrl'
+import {parseRemoteUrl} from './parseRepositoryUrl'
 import fileExists from './fileExists'
 
 const required = s => Boolean(s) || 'required'
@@ -38,13 +37,27 @@ async function cli(): Promise<void> {
     remotes = new Set((await spawn('git', ['remote'], {cwd: packageDirectory})).stdout.toString('utf8').split(/\r\n|\r|\n/mg))
   }
   if (remotes.has('skeleton')) {
-    // TODO
+    const packageJson = JSON.parse(await fs.readFile(path.join(packageDirectory, 'package.json'), 'utf8'))
+    await spawn(git, ['diff-index', '--quiet', 'HEAD', '--']).catch(() => {
+      console.error(`Please commit your changes and re-run.`) // eslint-disable-line no-console
+      process.exit(1)
+    })
+    const {isPrivate} = await inquirer.prompt([
+      {type: 'confirm', name: 'isPrivate', message: 'Create private repository?', default: false},
+    ])
+    await require('./createGitHubRepository').default(packageDirectory, {private: isPrivate})
+    if (await fileExists(path.join(packageDirectory, '.travis.yml'))) {
+      await require('./setUpTravisCI').default(packageDirectory)
+    }
+    if (packageJson.devDependencies && packageJson.devDependencies['semantic-release']) {
+      await require('./setUpSemanticRelease').default(packageDirectory, {private: isPrivate})
+    }
   } else {
     const {
       name, description, author, keywords, organization, repo
     } = await promptForSetUpSkeleton(packageDirectory)
 
-    await setUpSkeleton({
+    await require('./setUpSkeleton').default({
       packageDirectory,
       name,
       description,
@@ -82,10 +95,7 @@ async function promptForSetUpSkeleton(packageDirectory) {
   const packageJson = JSON.parse(await fs.readFile(path.join(packageDirectory, 'package.json'), 'utf8'))
   let repositoryUrl
   try {
-    const stdout = (
-      await spawn('git', ['remote', 'get-url', 'origin'], {cwd: packageDirectory})
-    ).stdout.toString('utf8').trim()
-    repositoryUrl = parseRepositoryUrl(stdout)
+    repositoryUrl = await parseRemoteUrl(packageDirectory, 'origin')
   } catch (error) {
     console.error(error.stack) // eslint-disable-line no-console
   }
