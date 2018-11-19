@@ -57,10 +57,11 @@ describe('setUpSkeleton', () => {
     expect(String(origin).trim()).to.equal('https://github.com/jedwards1211/test-package.git')
 
     const {stdout: skeleton} = await spawn('git', ['remote', 'get-url', 'skeleton'], {cwd: packageDirectory})
-    expect(String(skeleton).trim()).to.equal('https://github.com/jedwards1211/0-60.git')
+    expect(String(skeleton).trim()).to.equal('https://github.com/jedwards1211/embody.git')
 
     const readme = await fs.readFile(path.join(packageDirectory, 'README.md'), 'utf8')
     expect(readme).to.match(/^# @jedwards1211\/test-package/)
+    expect(readme).to.contain('[![npm version](https://badge.fury.io/js/%40jedwards1211%2Ftest-package.svg)](https://badge.fury.io/js/%40jedwards1211%2Ftest-package)')
     expect(readme).to.contain(options.description)
 
     const license = await fs.readFile(path.join(packageDirectory, 'LICENSE.md'), 'utf8')

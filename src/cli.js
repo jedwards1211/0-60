@@ -130,7 +130,8 @@ async function promptForSetUpSkeleton(packageDirectory) {
       type: 'input',
       name: 'keywords',
       message: 'Package keywords:',
-      transformer: text => text.split(/\s*,\s*|\s+/g),
+      filter: text => text.split(/\s*,\s*|\s+/g),
+      transformer: values => values instanceof Array ? values.join(',') : values,
     },
     {
       type: 'input',

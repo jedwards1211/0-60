@@ -1,10 +1,9 @@
 // @flow
 
-import glob from 'glob'
+import globby from 'globby'
 import fs from 'fs-extra'
 import path from 'path'
 import {update} from 'lodash'
-import {promisify} from 'es6-promisify'
 import {spawn} from 'promisify-child-process'
 import parseRepositoryUrl from './parseRepositoryUrl'
 
@@ -77,33 +76,17 @@ export default async function setUpSkeleton({
   const replacements = [[oldDescription, description]]
   if (author) replacements.push([oldAuthor, author])
   if (git) replacements.push([oldRepoPath, `${git.organization}/${git.repo}`])
+  replacements.push([new RegExp(`([a-z]+://.+?/)${oldName}`, 'g'), `$1${encodeURIComponent(name)}`])
   replacements.push([oldName, name])
 
-  const ignore = [
-    path.join('.git', '**'),
-    path.join('node_modules', '**'),
-    'package.json',
-    'yarn.lock',
-    ...await readLines(path.resolve(packageDirectory, '.gitignore')).catch(() => []),
-  ]
-
-  replaceInFiles(packageDirectory, replacements, {ignore})
-}
-
-async function readLines(file: string): Promise<Array<string>> {
-  const data = await fs.readFile(file, 'utf8')
-  return data.split(/\r\n|\r|\n/mg)
+  await replaceInFiles(packageDirectory, replacements)
 }
 
 async function replaceInFiles(
   directory: string,
   replacements: Iterable<[RegExp | string, string]>,
-  {ignore = []}: {ignore?: Array<string>} = {}
 ): Promise<void> {
-  const files = await promisify(glob)(path.resolve(directory, '**'), {
-    dot: true,
-    ignore: ignore.map(file => path.resolve(directory, file)),
-  })
+  const files = await globby(path.resolve(directory, '**'))
 
   await Promise.all(files.map(async (file: string): Promise<void> => {
     let oldText
