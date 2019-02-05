@@ -31,22 +31,14 @@ async function cli(): Promise<void> {
   let remotes: Set<string>
   try {
     remotes = new Set(
-      (await spawn(git, ['remote'])).stdout
+      (await spawn(git, ['remote'], { maxBuffer: 1024 * 1024 })).stdout
         .toString('utf8')
         .split(/\r\n|\r|\n/gm)
     )
   } catch (error) {
-    let skeleton
-    ;({ skeleton, packageDirectory } = await promptForCloneSkeleton())
-    await spawn(git, ['clone', skeleton, packageDirectory], {
-      stdio: 'inherit',
-    })
-    remotes = new Set(
-      (await spawn('git', ['remote'], { cwd: packageDirectory })).stdout
-        .toString('utf8')
-        .split(/\r\n|\r|\n/gm)
-    )
+    // ignore
   }
+
   if (remotes.has('skeleton')) {
     await spawn(git, ['diff-index', '--quiet', 'HEAD', '--']).catch(() => {
       console.error(`Please commit your changes and re-run.`) // eslint-disable-line no-console
@@ -67,6 +59,20 @@ async function cli(): Promise<void> {
       await require('./setUpTravisCI').default(packageDirectory)
     }
   } else {
+    const skeleton = await promptForSkeleton()
+    packageDirectory = await promptForDestinationDirectory()
+    await spawn(git, ['clone', skeleton, packageDirectory], {
+      stdio: 'inherit',
+    })
+    remotes = new Set(
+      (await spawn('git', ['remote'], {
+        cwd: packageDirectory,
+        maxBuffer: 1024,
+      })).stdout
+        .toString('utf8')
+        .split(/\r\n|\r|\n/gm)
+    )
+
     const {
       name,
       description,
@@ -95,9 +101,9 @@ async function cli(): Promise<void> {
   }
 }
 
-async function promptForCloneSkeleton() {
+async function promptForSkeleton(): Promise<string> {
   const { skeletons } = await configPromise
-  const { skeleton, directory } = await inquirer.prompt([
+  const { skeleton } = await inquirer.prompt([
     skeletons
       ? {
           type: 'list',
@@ -112,6 +118,12 @@ async function promptForCloneSkeleton() {
           message: 'Skeleton repo:',
           validate: required,
         },
+  ])
+  return { skeleton }
+}
+
+async function promptForDestinationDirectory(): Promise<string> {
+  const { directory } = await inquirer.prompt([
     {
       type: 'input',
       name: 'directory',
@@ -119,7 +131,7 @@ async function promptForCloneSkeleton() {
       validate: required,
     },
   ])
-  return { skeleton, packageDirectory: directory }
+  return directory
 }
 
 async function promptForSetUpSkeleton(packageDirectory) {
@@ -134,7 +146,9 @@ async function promptForSetUpSkeleton(packageDirectory) {
   }
   let defaultAuthor
   try {
-    defaultAuthor = (await spawn('git', ['config', 'user.name'])).stdout
+    defaultAuthor = (await spawn('git', ['config', 'user.name'], {
+      maxBuffer: 1024,
+    })).stdout
       .toString('utf8')
       .trim()
   } catch (error) {

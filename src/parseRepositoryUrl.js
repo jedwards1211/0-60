@@ -32,6 +32,7 @@ export async function parseRemoteUrl(
   const stdout = (await (spawn('git', ['remote', 'get-url', remote], {
     // $FlowFixMe
     cwd: packageDirectory,
+    maxBuffer: 1024,
   }): any)).stdout
     .toString('utf8')
     .trim()

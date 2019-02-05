@@ -15,3 +15,9 @@ want to go back to setting up all of that stuff manually.
 ```sh
 yarn global add 0-60
 ```
+
+Or if you want you can run it with `npx`:
+
+```sh
+npx 0-60
+```

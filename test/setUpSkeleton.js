@@ -71,7 +71,7 @@ describe('setUpSkeleton', () => {
     const { stdout: origin } = await spawn(
       'git',
       ['remote', 'get-url', 'origin'],
-      { cwd: packageDirectory }
+      { cwd: packageDirectory, maxBuffer: 1024 }
     )
     expect(String(origin).trim()).to.equal(
       'https://github.com/jedwards1211/test-package.git'
@@ -80,7 +80,7 @@ describe('setUpSkeleton', () => {
     const { stdout: skeleton } = await spawn(
       'git',
       ['remote', 'get-url', 'skeleton'],
-      { cwd: packageDirectory }
+      { cwd: packageDirectory, maxBuffer: 1024 }
     )
     expect(String(skeleton).trim()).to.equal(
       'https://github.com/jedwards1211/embody.git'

@@ -22,6 +22,7 @@ async function createGitHubRepository(
     ['remote', 'get-url', 'origin'],
     {
       cwd: packageDirectory,
+      maxBuffer: 1024,
     }
   ): any).stdout
     .toString('utf8')
