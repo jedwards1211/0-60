@@ -12,17 +12,9 @@ import installDeps from './installDeps'
 
 const required = s => Boolean(s) || 'required'
 
-async function loadConfig() {
-  try {
-    return JSON.parse(
-      await fs.readFile(path.join(os.homedir(), '.0-60.json'), 'utf8')
-    )
-  } catch (err) {
-    return {}
-  }
-}
-
-const configPromise = loadConfig()
+const configPromise = fs
+  .readJson(path.join(os.homedir(), '.0-60.json'))
+  .catch(() => ({}))
 const gitPromise = spawn('which', ['hub']).then(() => 'hub', () => 'git')
 
 async function cli(): Promise<void> {
