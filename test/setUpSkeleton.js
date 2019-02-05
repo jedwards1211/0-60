@@ -19,6 +19,17 @@ describe('setUpSkeleton', () => {
       packageDirectory,
       { dot: true }
     )
+    await spawn('git', ['init'], { cwd: packageDirectory })
+    await spawn(
+      'git',
+      [
+        'remote',
+        'add',
+        'origin',
+        'https://github.com/jedwards1211/0-60-TEST.git',
+      ],
+      { cwd: packageDirectory }
+    )
   })
   afterEach(async function(): Promise<void> {
     if (this.currentTest.state === 'passed') {
