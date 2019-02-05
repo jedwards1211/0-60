@@ -28,15 +28,27 @@ const gitPromise = spawn('which', ['hub']).then(() => 'hub', () => 'git')
 async function cli(): Promise<void> {
   const git = await gitPromise
   let packageDirectory: string = process.cwd()
-  let remotes: Set<string>
-  try {
-    remotes = new Set(
-      (await spawn(git, ['remote'], { maxBuffer: 1024 * 1024 })).stdout
-        .toString('utf8')
-        .split(/\r\n|\r|\n/gm)
-    )
-  } catch (error) {
-    // ignore
+  let remotes: Set<string> = new Set()
+  let skeleton: ?string
+
+  if ('clone' === process.argv[2]) {
+    if (!process.argv[3]) {
+      console.error('Usage: 0-60 clone <REPO URL>') // eslint-disable-line no-console
+      process.exit(1)
+    }
+    skeleton = process.argv[3]
+  }
+
+  if (!skeleton) {
+    try {
+      remotes = new Set(
+        (await spawn(git, ['remote'], { maxBuffer: 1024 * 1024 })).stdout
+          .toString('utf8')
+          .split(/\r\n|\r|\n/gm)
+      )
+    } catch (error) {
+      // ignore
+    }
   }
 
   if (remotes.has('skeleton')) {
@@ -59,7 +71,7 @@ async function cli(): Promise<void> {
       await require('./setUpTravisCI').default(packageDirectory)
     }
   } else {
-    const skeleton = await promptForSkeleton()
+    if (!skeleton) skeleton = await promptForSkeleton()
     packageDirectory = await promptForDestinationDirectory()
     await spawn(git, ['clone', skeleton, packageDirectory], {
       stdio: 'inherit',
