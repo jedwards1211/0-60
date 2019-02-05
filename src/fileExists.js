@@ -1,6 +1,6 @@
 // @flow
 
-import fs from 'fs-extra'
+import * as fs from 'fs-extra'
 
 export default async function fileExists(file: string): Promise<boolean> {
   try {

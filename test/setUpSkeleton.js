@@ -1,27 +1,31 @@
 // @flow
 
-import {describe, beforeEach, afterEach, it} from 'mocha'
-import {expect} from 'chai'
+import { describe, beforeEach, afterEach, it } from 'mocha'
+import { expect } from 'chai'
 import setUpSkeleton from '../src/setUpSkeleton'
-import fs from 'fs-extra'
-import {promisify} from 'es6-promisify'
+import * as fs from 'fs-extra'
+import { promisify } from 'es6-promisify'
 import copy from 'copy'
 import path from 'path'
-import {spawn} from 'promisify-child-process'
+import { spawn } from 'promisify-child-process'
 
 const packageDirectory = path.join(__dirname, 'packageTest')
 
 describe('setUpSkeleton', () => {
   beforeEach(async () => {
     await fs.remove(packageDirectory)
-    await promisify(copy)(path.join(__dirname, 'package', '**'), packageDirectory, {dot: true})
+    await promisify(copy)(
+      path.join(__dirname, 'package', '**'),
+      packageDirectory,
+      { dot: true }
+    )
   })
-  afterEach(async function (): Promise<void> {
+  afterEach(async function(): Promise<void> {
     if (this.currentTest.state === 'passed') {
       await fs.remove(packageDirectory)
     }
   })
-  it(`works`, async function (): Promise<void> {
+  it(`works`, async function(): Promise<void> {
     const options = {
       packageDirectory,
       name: '@jedwards1211/test-package',
@@ -33,7 +37,7 @@ describe('setUpSkeleton', () => {
         repo: 'test-package',
       },
     }
-    const {name, description, author, keywords} = options
+    const { name, description, author, keywords } = options
     await setUpSkeleton(options)
 
     // $FlowFixMe
@@ -53,18 +57,38 @@ describe('setUpSkeleton', () => {
       },
     })
 
-    const {stdout: origin} = await spawn('git', ['remote', 'get-url', 'origin'], {cwd: packageDirectory})
-    expect(String(origin).trim()).to.equal('https://github.com/jedwards1211/test-package.git')
+    const { stdout: origin } = await spawn(
+      'git',
+      ['remote', 'get-url', 'origin'],
+      { cwd: packageDirectory }
+    )
+    expect(String(origin).trim()).to.equal(
+      'https://github.com/jedwards1211/test-package.git'
+    )
 
-    const {stdout: skeleton} = await spawn('git', ['remote', 'get-url', 'skeleton'], {cwd: packageDirectory})
-    expect(String(skeleton).trim()).to.equal('https://github.com/jedwards1211/embody.git')
+    const { stdout: skeleton } = await spawn(
+      'git',
+      ['remote', 'get-url', 'skeleton'],
+      { cwd: packageDirectory }
+    )
+    expect(String(skeleton).trim()).to.equal(
+      'https://github.com/jedwards1211/embody.git'
+    )
 
-    const readme = await fs.readFile(path.join(packageDirectory, 'README.md'), 'utf8')
+    const readme = await fs.readFile(
+      path.join(packageDirectory, 'README.md'),
+      'utf8'
+    )
     expect(readme).to.match(/^# @jedwards1211\/test-package/)
-    expect(readme).to.contain('[![npm version](https://badge.fury.io/js/%40jedwards1211%2Ftest-package.svg)](https://badge.fury.io/js/%40jedwards1211%2Ftest-package)')
+    expect(readme).to.contain(
+      '[![npm version](https://badge.fury.io/js/%40jedwards1211%2Ftest-package.svg)](https://badge.fury.io/js/%40jedwards1211%2Ftest-package)'
+    )
     expect(readme).to.contain(options.description)
 
-    const license = await fs.readFile(path.join(packageDirectory, 'LICENSE.md'), 'utf8')
+    const license = await fs.readFile(
+      path.join(packageDirectory, 'LICENSE.md'),
+      'utf8'
+    )
     expect(license).to.contain(options.author)
   })
 })
