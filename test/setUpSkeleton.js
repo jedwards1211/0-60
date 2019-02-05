@@ -73,8 +73,8 @@ describe('setUpSkeleton', () => {
       ['remote', 'get-url', 'origin'],
       { cwd: packageDirectory, maxBuffer: 1024 }
     )
-    expect(String(origin).trim()).to.equal(
-      'https://github.com/jedwards1211/test-package.git'
+    expect(String(origin).trim()).to.match(
+      new RegExp('github.com/jedwards1211/test-package.git$')
     )
 
     const { stdout: skeleton } = await spawn(
@@ -82,8 +82,8 @@ describe('setUpSkeleton', () => {
       ['remote', 'get-url', 'skeleton'],
       { cwd: packageDirectory, maxBuffer: 1024 }
     )
-    expect(String(skeleton).trim()).to.equal(
-      'https://github.com/jedwards1211/embody.git'
+    expect(String(skeleton).trim()).to.match(
+      new RegExp('github.com/jedwards1211/embody.git$')
     )
 
     const readme = await fs.readFile(

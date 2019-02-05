@@ -68,14 +68,6 @@ async function cli(): Promise<void> {
     await spawn(git, ['clone', skeleton, packageDirectory], {
       stdio: 'inherit',
     })
-    remotes = new Set(
-      (await spawn('git', ['remote'], {
-        cwd: packageDirectory,
-        maxBuffer: 1024,
-      })).stdout
-        .toString('utf8')
-        .split(/\r\n|\r|\n/gm)
-    )
 
     const {
       name,
