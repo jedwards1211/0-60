@@ -1,0 +1,16 @@
+coverage
+.nyc_output
+src
+lib
+test
+scripts
+node_modules
+.babelrc
+.eslintrc
+.travis.yml
+.eslintcache
+.idea
+solano.yml
+renovate.json
+commitlint.config.js
+flow-typed
