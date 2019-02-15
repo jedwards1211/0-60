@@ -115,7 +115,7 @@ async function promptForSkeleton(): Promise<string> {
           validate: required,
         },
   ])
-  return { skeleton }
+  return skeleton
 }
 
 async function promptForDestinationDirectory(): Promise<string> {
