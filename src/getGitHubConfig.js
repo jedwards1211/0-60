@@ -6,7 +6,7 @@ import path from 'path'
 import yaml from 'js-yaml'
 import { once } from 'lodash'
 import inquirer from 'inquirer'
-import octokit from './octokit'
+import Octokit from '@octokit/rest'
 
 type Config = {
   user: string,
@@ -49,11 +49,13 @@ const getGitHubConfig = once(
       },
     ])
 
-    octokit.authenticate({
-      type: 'basic',
-      username,
-      password,
+    const octokit = new Octokit({
+      auth: {
+        username,
+        password,
+      },
     })
+
     const result = await octokit.authorization.create({
       note: '0-60',
       client_id: '00000000000000000000',

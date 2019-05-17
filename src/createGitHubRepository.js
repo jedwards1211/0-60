@@ -4,7 +4,7 @@ import { spawn } from 'promisify-child-process'
 import * as fs from 'fs-extra'
 import path from 'path'
 import parseRepositoryUrl from './parseRepositoryUrl'
-import octokit, { authenticate } from './octokit'
+import getOctokit from './octokit'
 import getGitHubConfig from './getGitHubConfig'
 
 type Options = {
@@ -15,7 +15,7 @@ async function createGitHubRepository(
   packageDirectory: string,
   options: Options = {}
 ): Promise<any> {
-  await authenticate()
+  const octokit = await getOctokit()
 
   const rawRepositoryUrl = (await spawn(
     'git',
@@ -45,12 +45,12 @@ async function createGitHubRepository(
   process.stderr.write(`Creating ${rawRepositoryUrl}...`)
   try {
     if (repositoryUrl.organization !== user) {
-      return await octokit.repos.createForOrg({
+      return await octokit.repos.createInOrg({
         ...props,
         org: repositoryUrl.organization,
       })
     } else {
-      return await octokit.repos.create(props)
+      return await octokit.repos.createForAuthenticatedUser(props)
     }
   } catch (error) {
     if (!/Repository creation failed/i.test(error.message)) throw error

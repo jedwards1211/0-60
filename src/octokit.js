@@ -2,16 +2,11 @@
 
 import getGitHubConfig from './getGitHubConfig'
 import { once } from 'lodash'
+import Octokit from '@octokit/rest'
 
-const octokit = require('@octokit/rest')()
-
-export default octokit
-
-export const authenticate = once(
-  async (): Promise<void> => {
-    octokit.authenticate({
-      type: 'oauth',
-      token: (await getGitHubConfig()).oauth_token,
+export default once(
+  async () =>
+    new Octokit({
+      auth: `token ${(await getGitHubConfig()).oauth_token}`,
     })
-  }
 )
