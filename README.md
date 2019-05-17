@@ -93,3 +93,8 @@ Running `0-60` inside in your repo directory will:
 
 - Create the repository on GitHub
 - enable Travis CI (if `.travis.yml` is present)
+
+## Bringing in changes to the skeleton
+
+Just run `git pull skeleton master` (`0-60` keeps the skeleton repository URL in the `skeleton` remote).
+I recommend using the CLI in my fork of [merge-package.json](https://github.com/jedwards1211/merge-package.json) to automatically fix merge conflicts in `package.json`.  (Install with `npm i -g jedwards1211/merge-package.json#cli` and then just run `merge-package.json` in the project directory after pulling.)
