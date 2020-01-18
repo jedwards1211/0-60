@@ -1,11 +1,11 @@
 #!/usr/bin/env node
+// @flow
 
 import path from 'path'
 import { spawn } from 'promisify-child-process'
 import inquirer from 'inquirer'
-import fs from 'fs-extra'
+import * as fs from 'fs-extra'
 import os from 'os'
-import { parseRemoteUrl } from './parseRepositoryUrl'
 import fileExists from './fileExists'
 
 import installDeps from './installDeps'
@@ -21,19 +21,19 @@ async function cli(): Promise<void> {
   const git = await gitPromise
   let packageDirectory: string = process.cwd()
   let remotes: Set<string> = new Set()
-  let skeleton: ?string
+  let hasSkeleton = 'clone' === process.argv[2]
 
-  if ('clone' === process.argv[2]) {
+  if (hasSkeleton) {
     if (!process.argv[3]) {
       console.error('Usage: 0-60 clone <REPO URL>') // eslint-disable-line no-console
       process.exit(1)
     }
-    skeleton = process.argv[3]
   }
 
-  if (!skeleton) {
+  if (!hasSkeleton) {
     try {
       remotes = new Set(
+        // $FlowFixMe
         (await spawn(git, ['remote'], { maxBuffer: 1024 * 1024 })).stdout
           .toString('utf8')
           .split(/\r\n|\r|\n/gm)
@@ -59,27 +59,34 @@ async function cli(): Promise<void> {
     await require('./createGitHubRepository').default(packageDirectory, {
       private: isPrivate,
     })
+    console.error('Pushing to GitHub...') // eslint-disable-line no-console
+    await spawn(git, ['push'])
+
     if (await fileExists(path.join(packageDirectory, '.travis.yml'))) {
       await require('./setUpTravisCI').default(packageDirectory)
     }
+    if (
+      await fileExists(path.join(packageDirectory, '.circleci', 'config.yml'))
+    ) {
+      await require('./setUpCircleCI').default(packageDirectory)
+    }
   } else {
-    if (!skeleton) skeleton = await promptForSkeleton()
-    packageDirectory = await promptForDestinationDirectory()
-    await spawn(git, ['clone', skeleton, packageDirectory], {
-      stdio: 'inherit',
-    })
-
     const {
+      skeleton,
+      directory,
       name,
       description,
       author,
       keywords,
       organization,
       repo,
-    } = await promptForSetUpSkeleton(packageDirectory)
+    } = await promptForSetUpSkeleton()
 
+    await spawn(git, ['clone', skeleton, directory], {
+      stdio: 'inherit',
+    })
     await require('./setUpSkeleton').default({
-      packageDirectory,
+      packageDirectory: directory,
       name,
       description,
       author,
@@ -97,65 +104,45 @@ async function cli(): Promise<void> {
   }
 }
 
-async function promptForSkeleton(): Promise<string> {
-  const { skeletons } = await configPromise
-  const { skeleton } = await inquirer.prompt([
-    skeletons
-      ? {
-          type: 'list',
-          name: 'skeleton',
-          choices: skeletons,
-          message: 'Skeleton repo:',
-          validate: required,
-        }
-      : {
-          type: 'input',
-          name: 'skeleton',
-          message: 'Skeleton repo:',
-          validate: required,
-        },
-  ])
-  return skeleton
+type SkeletonAnswers = {
+  skeleton: string,
+  directory: string,
+  name: string,
+  description: string,
+  author: string,
+  keywords: Array<string>,
+  organization: string,
+  repo: string,
+  ready: boolean,
 }
 
-async function promptForDestinationDirectory(): Promise<string> {
-  const { directory } = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'directory',
-      message: 'Destination directory:',
-      validate: required,
-    },
-  ])
-  return directory
-}
-
-async function promptForSetUpSkeleton(packageDirectory) {
-  const packageJson = JSON.parse(
-    await fs.readFile(path.join(packageDirectory, 'package.json'), 'utf8')
-  )
-  let repositoryUrl
-  try {
-    repositoryUrl = await parseRemoteUrl(packageDirectory, 'origin')
-  } catch (error) {
-    console.error(error.stack) // eslint-disable-line no-console
-  }
+async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
   let defaultAuthor
   try {
+    // $FlowFixMe
     defaultAuthor = (await spawn('git', ['config', 'user.name'], {
       maxBuffer: 1024,
     })).stdout
       .toString('utf8')
       .trim()
   } catch (error) {
-    defaultAuthor = packageJson.author
+    // ignore
   }
-  return await inquirer.prompt([
+
+  let skeleton: ?string = 'clone' === process.argv[2] ? process.argv[3] : null
+
+  const questions = [
+    {
+      type: 'input',
+      name: 'directory',
+      message: 'Destination directory:',
+      validate: required,
+    },
     {
       type: 'input',
       name: 'name',
       message: 'Package name:',
-      default: path.basename(packageDirectory),
+      default: ({ directory }) => path.basename(directory),
       validate: required,
     },
     {
@@ -182,10 +169,17 @@ async function promptForSetUpSkeleton(packageDirectory) {
     {
       type: 'input',
       name: 'organization',
-      default: ({ name }) => {
+      default: ({
+        name,
+        skeleton,
+      }: {
+        name: string,
+        skeleton: string,
+      }): ?string => {
         const match = /^@(.*?)\//.exec(name)
         if (match) return match[1]
-        return repositoryUrl && repositoryUrl.organization
+        const parts = skeleton.split(/\//g)
+        if (parts.length >= 2) return parts[parts.length - 2]
       },
       message: 'GitHub organization:',
       validate: required,
@@ -197,15 +191,46 @@ async function promptForSetUpSkeleton(packageDirectory) {
       default: ({ name }) => name.replace(/^@(.*?)\//, ''),
       validate: required,
     },
-  ])
+    {
+      name: 'ready',
+      type: 'confirm',
+      default: true,
+      message: 'Ready to go?',
+    },
+  ]
+  if (!skeleton) {
+    const { skeletons } = await configPromise
+    questions.unshift(
+      skeletons
+        ? {
+            type: 'list',
+            name: 'skeleton',
+            choices: skeletons,
+            message: 'Skeleton repo:',
+            validate: required,
+          }
+        : {
+            type: 'input',
+            name: 'skeleton',
+            message: 'Skeleton repo:',
+            validate: required,
+          }
+    )
+  }
+
+  const answers: SkeletonAnswers = await inquirer.prompt(questions)
+  if (!answers.ready) process.exit(1)
+
+  if (skeleton) answers.skeleton = skeleton
+  return answers
 }
 
 cli().then(
   () => process.exit(0),
-  err => {
+  (err: Error) => {
     console.error(err.message) // eslint-disable-line no-console
-    if (err.stdout) console.error(err.stdout.toString('utf8')) // eslint-disable-line no-console
-    if (err.stderr) console.error(err.stderr.toString('utf8')) // eslint-disable-line no-console
+    if ((err: any).stdout) console.error((err: any).stdout.toString('utf8')) // eslint-disable-line no-console
+    if ((err: any).stderr) console.error((err: any).stderr.toString('utf8')) // eslint-disable-line no-console
     process.exit(1)
   }
 )

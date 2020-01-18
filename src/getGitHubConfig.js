@@ -7,28 +7,30 @@ import yaml from 'js-yaml'
 import { once } from 'lodash'
 import inquirer from 'inquirer'
 import Octokit from '@octokit/rest'
+import createSemanticReleaseGithubToken from './createSemanticReleaseGithubToken'
+import { readConfig, writeConfig } from './config'
 
-type Config = {
+export type GithubConfig = {
   user: string,
   oauth_token: string,
+  semantic_release_token?: string,
 }
 
 const required = s => Boolean(s) || 'required'
 
 const getGitHubConfig = once(
-  async (): Promise<Config> => {
+  async (): Promise<GithubConfig> => {
     try {
-      const config: any = yaml.safeLoad(
-        await fs.readFile(path.join(os.homedir(), '.config', 'hub'), 'utf8')
-      )
+      const config = await readConfig()
       if (config['github.com']) return config['github.com'][0]
     } catch (error) {
       // ignore
     }
+
     try {
-      const config: any = yaml.safeLoad(
-        await fs.readFile(path.join(os.homedir(), '.config', '0-60'), 'utf8')
-      )
+      const config = (yaml.safeLoad(
+        await fs.readFile(path.join(os.homedir(), '.config', 'hub'), 'utf8')
+      ): any)
       if (config['github.com']) return config['github.com'][0]
     } catch (error) {
       // ignore
@@ -65,20 +67,28 @@ const getGitHubConfig = once(
       data: { token },
     } = result
 
-    const config = {
+    const semantic_release_token = await createSemanticReleaseGithubToken(
+      octokit
+    )
+
+    const githubConfig = {
       user: username,
       oauth_token: token,
+      semantic_release_token,
     }
-    const data = yaml.safeDump({
-      'github.com': [config],
-    })
-    await fs.writeFile(path.join(os.homedir(), '.config', '0-60'), data, 'utf8')
+    await writeGithubConfig(githubConfig)
 
-    return config
+    return githubConfig
   }
 )
 
 export default getGitHubConfig
+
+export async function writeGithubConfig(
+  githubConfig: GithubConfig
+): Promise<void> {
+  await writeConfig({ 'github.com': [githubConfig] })
+}
 
 if (!module.parent) {
   getGitHubConfig().then(console.log, console.error) // eslint-disable-line no-console
