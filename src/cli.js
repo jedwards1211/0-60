@@ -60,7 +60,7 @@ async function cli(): Promise<void> {
       private: isPrivate,
     })
     console.error('Pushing to GitHub...') // eslint-disable-line no-console
-    await spawn(git, ['push'])
+    await spawn(git, ['push'], { stdio: 'inherit' })
 
     if (await fileExists(path.join(packageDirectory, '.travis.yml'))) {
       await require('./setUpTravisCI').default(packageDirectory)
