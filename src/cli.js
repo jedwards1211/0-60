@@ -98,7 +98,7 @@ async function cli(): Promise<void> {
     })
 
     console.error('Installing dependencies...') // eslint-disable-line no-console
-    await installDeps({ packageDirectory })
+    await installDeps({ packageDirectory: directory })
 
     console.error('Ready to go!') // eslint-disable-line no-console
   }
@@ -219,6 +219,7 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
   }
 
   const answers: SkeletonAnswers = await inquirer.prompt(questions)
+  answers.directory = path.resolve(answers.directory)
   if (!answers.ready) process.exit(1)
 
   if (skeleton) answers.skeleton = skeleton
