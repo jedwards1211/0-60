@@ -218,10 +218,19 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
     )
   }
 
-  const answers: SkeletonAnswers = await inquirer.prompt(questions)
-  answers.directory = path.resolve(answers.directory)
-  if (!answers.ready) process.exit(1)
+  let answers: SkeletonAnswers
+  do {
+    answers = await inquirer.prompt(questions)
+    for (const question of questions) {
+      const { name, transformer } = (question: any)
+      if (name !== 'ready') {
+        const answer = answers[name]
+        ;(question: any).default = transformer ? transformer(answer) : answer
+      }
+    }
+  } while (!answers.ready)
 
+  answers.directory = path.resolve(answers.directory)
   if (skeleton) answers.skeleton = skeleton
   return answers
 }
