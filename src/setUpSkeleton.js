@@ -101,10 +101,7 @@ export default async function setUpSkeleton({
     `$1${encodeURIComponent(name)}`,
   ])
   replacements.push([oldName, name])
-  if (git) {
-    replacements.push([oldOrganization, git.organization])
-    replacements.push([oldRepo, git.repo])
-  }
+  if (git) replacements.push([oldRepo, git.repo])
 
   await replaceInFiles(packageDirectory, replacements)
 }
