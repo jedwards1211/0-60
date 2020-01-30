@@ -129,7 +129,8 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
     // ignore
   }
 
-  let skeleton: ?string = 'clone' === process.argv[2] ? process.argv[3] : null
+  let argvSkeleton: ?string =
+    'clone' === process.argv[2] ? process.argv[3] : null
 
   const questions = [
     {
@@ -171,13 +172,15 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
       name: 'organization',
       default: ({
         name,
-        skeleton,
+        skeleton: promptSkeleton,
       }: {
         name: string,
-        skeleton: string,
+        skeleton: ?string,
       }): ?string => {
         const match = /^@(.*?)\//.exec(name)
         if (match) return match[1]
+        const skeleton = argvSkeleton || promptSkeleton
+        if (!skeleton) return undefined
         const parts = skeleton.split(/\//g)
         if (parts.length >= 2) return parts[parts.length - 2]
       },
@@ -198,7 +201,7 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
       message: 'Ready to go?',
     },
   ]
-  if (!skeleton) {
+  if (!argvSkeleton) {
     const { skeletons } = await configPromise
     questions.unshift(
       skeletons
@@ -231,7 +234,7 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
   } while (!answers.ready)
 
   answers.directory = path.resolve(answers.directory)
-  if (skeleton) answers.skeleton = skeleton
+  if (argvSkeleton) answers.argvSkeleton = argvSkeleton
   return answers
 }
 
