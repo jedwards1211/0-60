@@ -174,12 +174,13 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
         skeleton,
       }: {
         name: string,
-        skeleton: string,
+        skeleton: ?string,
       }): ?string => {
         const match = /^@(.*?)\//.exec(name)
         if (match) return match[1]
+        if (!skeleton) return undefined
         const parts = skeleton.split(/\//g)
-        if (parts.length >= 2) return parts[parts.length - 2]
+        return parts.length >= 2 ? parts[parts.length - 2] : undefined
       },
       message: 'GitHub organization:',
       validate: required,
