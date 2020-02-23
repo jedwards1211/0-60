@@ -43,20 +43,34 @@ async function createGitHubRepository(
   const { user } = await getGitHubConfig()
 
   process.stderr.write(`Creating ${rawRepositoryUrl}...`)
+  let result
   try {
     if (repositoryUrl.organization !== user) {
-      return await octokit.repos.createInOrg({
+      result = await octokit.repos.createInOrg({
         ...props,
         org: repositoryUrl.organization,
       })
     } else {
-      return await octokit.repos.createForAuthenticatedUser(props)
+      result = await octokit.repos.createForAuthenticatedUser(props)
     }
   } catch (error) {
     if (!/Repository creation failed/i.test(error.message)) throw error
-  } finally {
-    console.error('done!') // eslint-disable-line no-console
   }
+
+  await octokit.activity.setRepoSubscription({
+    owner: repositoryUrl.organization,
+    repo: repositoryUrl.repo,
+    subscribed: true,
+  })
+  await octokit.repos.replaceTopics({
+    owner: repositoryUrl.organization,
+    repo: repositoryUrl.repo,
+    names: packageJson.keywords,
+  })
+
+  console.error('done!') // eslint-disable-line no-console
+
+  return result
 }
 
 export default createGitHubRepository

@@ -8,5 +8,6 @@ export default once(
   async () =>
     new Octokit({
       auth: `token ${(await getGitHubConfig()).oauth_token}`,
+      previews: ['mercy-preview'],
     })
 )
