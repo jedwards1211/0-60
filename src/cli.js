@@ -239,7 +239,7 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
   } while (!answers.ready)
 
   answers.directory = path.resolve(answers.directory)
-  if (argvSkeleton) answers.argvSkeleton = argvSkeleton
+  if (argvSkeleton) answers.skeleton = argvSkeleton
   return answers
 }
 
