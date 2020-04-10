@@ -2,7 +2,7 @@
 // @flow
 
 import path from 'path'
-import { spawn } from 'promisify-child-process'
+import { spawn as spawnRaw } from 'promisify-child-process'
 import inquirer from 'inquirer'
 import * as fs from 'fs-extra'
 import os from 'os'
@@ -11,6 +11,11 @@ import fileExists from './fileExists'
 import installDeps from './installDeps'
 
 const required = s => Boolean(s) || 'required'
+
+// our error handlers access the stdout and stderr of spawned processes, which
+// is not captured unless the encoding flag is provided.
+const spawn = (cmd: string, args: Array<string> = [], opts: Object = {}) =>
+  spawnRaw(cmd, args, { encoding: 'utf8', ...opts })
 
 const configPromise = fs
   .readJson(path.join(os.homedir(), '.0-60.json'))
@@ -234,7 +239,7 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
   } while (!answers.ready)
 
   answers.directory = path.resolve(answers.directory)
-  if (argvSkeleton) answers.argvSkeleton = argvSkeleton
+  if (argvSkeleton) answers.skeleton = argvSkeleton
   return answers
 }
 
