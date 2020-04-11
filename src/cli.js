@@ -67,13 +67,12 @@ async function cli(): Promise<void> {
     console.error('Pushing to GitHub...') // eslint-disable-line no-console
     await spawn(git, ['push'], { stdio: 'inherit' })
 
-    if (await fileExists(path.join(packageDirectory, '.travis.yml'))) {
-      await require('./setUpTravisCI').default(packageDirectory)
-    }
     if (
       await fileExists(path.join(packageDirectory, '.circleci', 'config.yml'))
     ) {
       await require('./setUpCircleCI').default(packageDirectory)
+    } else if (await fileExists(path.join(packageDirectory, '.travis.yml'))) {
+      await require('./setUpTravisCI').default(packageDirectory)
     }
   } else {
     const {
@@ -246,7 +245,7 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
 cli().then(
   () => process.exit(0),
   (err: Error) => {
-    console.error(err.message) // eslint-disable-line no-console
+    console.error(err.stack) // eslint-disable-line no-console
     if ((err: any).stdout) console.error((err: any).stdout.toString('utf8')) // eslint-disable-line no-console
     if ((err: any).stderr) console.error((err: any).stderr.toString('utf8')) // eslint-disable-line no-console
     process.exit(1)
