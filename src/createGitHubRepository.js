@@ -62,11 +62,13 @@ async function createGitHubRepository(
     repo: repositoryUrl.repo,
     subscribed: true,
   })
-  await octokit.repos.replaceTopics({
-    owner: repositoryUrl.organization,
-    repo: repositoryUrl.repo,
-    names: packageJson.keywords,
-  })
+  if (packageJson.keywords && packageJson.keywords.length) {
+    await octokit.repos.replaceTopics({
+      owner: repositoryUrl.organization,
+      repo: repositoryUrl.repo,
+      names: packageJson.keywords,
+    })
+  }
 
   console.error('done!') // eslint-disable-line no-console
 

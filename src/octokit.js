@@ -2,7 +2,7 @@
 
 import getGitHubConfig from './getGitHubConfig'
 import { once } from 'lodash'
-import Octokit from '@octokit/rest'
+import { Octokit } from '@octokit/rest'
 
 export default once(
   async () =>

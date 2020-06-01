@@ -10,6 +10,7 @@ const travis = new Travis({
 })
 
 async function setUpTravisCI(packageDirectory: string): Promise<void> {
+  process.stderr.write(`Setting up Travis CI...`)
   const repositoryUrl = await parseRemoteUrl(packageDirectory, 'origin')
 
   const { oauth_token } = await getGitHubConfig()
@@ -36,6 +37,7 @@ async function setUpTravisCI(packageDirectory: string): Promise<void> {
     repo: { id },
   } = result
   await promisify(cb => travis.hooks(id).put({ hook: { active: true } }, cb))()
+  process.stderr.write('done!\n')
 }
 
 export default setUpTravisCI

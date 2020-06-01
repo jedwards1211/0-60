@@ -16,6 +16,7 @@ const required = s => Boolean(s) || 'required'
 export default async function setUpCircleCI(
   packageDirectory: string
 ): Promise<void> {
+  process.stderr.write(`Following project on CircleCI...`)
   const { organization, repo } = await parseRemoteUrl(
     packageDirectory,
     'origin'
@@ -24,7 +25,6 @@ export default async function setUpCircleCI(
     path.resolve(packageDirectory, 'package.json')
   )
   const circle = await getCircleCIClient()
-  process.stderr.write(`Following project on CircleCI...`)
   await circle.followProject({ username: organization, project: repo })
   process.stderr.write('done!\n')
 
