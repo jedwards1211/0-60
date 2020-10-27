@@ -15,7 +15,7 @@ async function setUpTravisCI(packageDirectory: string): Promise<void> {
 
   const { oauth_token } = await getGitHubConfig()
 
-  await promisify(cb =>
+  await promisify((cb) =>
     travis.authenticate(
       {
         github_token: oauth_token,
@@ -23,20 +23,20 @@ async function setUpTravisCI(packageDirectory: string): Promise<void> {
       cb
     )
   )()
-  const result = await promisify(cb =>
+  const result = await promisify((cb) =>
     travis.repos(repositoryUrl.organization, repositoryUrl.repo).get(cb)
   )()
   if (!result || !result.repo)
     throw new Error(
-      `failed to get travis repo for ${repositoryUrl.organization}/${
-        repositoryUrl.repo
-      }`
+      `failed to get travis repo for ${repositoryUrl.organization}/${repositoryUrl.repo}`
     )
 
   const {
     repo: { id },
   } = result
-  await promisify(cb => travis.hooks(id).put({ hook: { active: true } }, cb))()
+  await promisify((cb) =>
+    travis.hooks(id).put({ hook: { active: true } }, cb)
+  )()
   process.stderr.write('done!\n')
 }
 

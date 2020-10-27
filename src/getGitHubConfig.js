@@ -16,9 +16,9 @@ export type GithubConfig = {
   semantic_release_token?: string,
 }
 
-const required = s => Boolean(s) || 'required'
+const required = (s) => Boolean(s) || 'required'
 
-const getGitHubConfig = once(
+const getGitHubConfig: () => Promise<GithubConfig> = once(
   async (): Promise<GithubConfig> => {
     try {
       const config = await readConfig()

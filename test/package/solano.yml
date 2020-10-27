@@ -59,8 +59,8 @@ tests:
 cache:
   key_paths:
     - package.json
-    - yarn.lock  # to freeze packages installed by yarn
+    - yarn.lock # to freeze packages installed by yarn
   save_paths:
-    - REPO/node_modules  # Repo's "local" cache
-    - HOME/.yarn         # Yarn's "global" cache
+    - REPO/node_modules # Repo's "local" cache
+    - HOME/.yarn # Yarn's "global" cache
 

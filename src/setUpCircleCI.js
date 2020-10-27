@@ -11,7 +11,7 @@ import * as fs from 'fs-extra'
 import path from 'path'
 import getVsceToken from './getVsceToken'
 
-const required = s => Boolean(s) || 'required'
+const required = (s) => Boolean(s) || 'required'
 
 export default async function setUpCircleCI(
   packageDirectory: string

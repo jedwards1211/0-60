@@ -2395,7 +2395,7 @@ declare module 'lodash/fp' {
     spreadFrom(start: number, func: Function): Function;
     throttle<A, R>(wait: number): (func: (...A) => R) => (...A) => R;
     throttle<A, R>(wait: number, func: (...A) => R): (...A) => R;
-    unary<T, R>(func: (T, ...any[]) => R): T => R;
+    unary<T, R>(func: (T, ...any[]) => R): (T) => R;
     wrap(wrapper: Function): (value: any) => Function;
     wrap(wrapper: Function, value: any): Function;
 

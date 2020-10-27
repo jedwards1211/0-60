@@ -62,7 +62,7 @@ export default async function setUpSkeleton({
       update(
         packageJson,
         field,
-        url => url && url.replace(oldRepoPath, newRepoPath)
+        (url) => url && url.replace(oldRepoPath, newRepoPath)
       )
     }
 
@@ -113,22 +113,20 @@ async function replaceInFiles(
   const files = await globby(path.resolve(directory, '**'))
 
   await Promise.all(
-    files.map(
-      async (file: string): Promise<void> => {
-        let oldText
-        try {
-          oldText = await fs.readFile(file, 'utf8')
-        } catch (err) {
-          if (err.code === 'EISDIR') return
-          throw err
-        }
-        let newText = oldText
-        for (let [find, replace] of replacements) {
-          newText = replaceAll(newText, find, replace)
-        }
-        if (newText !== oldText) await fs.writeFile(file, newText, 'utf8')
+    files.map(async (file: string): Promise<void> => {
+      let oldText
+      try {
+        oldText = await fs.readFile(file, 'utf8')
+      } catch (err) {
+        if (err.code === 'EISDIR') return
+        throw err
       }
-    )
+      let newText = oldText
+      for (let [find, replace] of replacements) {
+        newText = replaceAll(newText, find, replace)
+      }
+      if (newText !== oldText) await fs.writeFile(file, newText, 'utf8')
+    })
   )
 }
 

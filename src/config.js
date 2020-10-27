@@ -17,7 +17,7 @@ let config: Config = {}
 
 const configFile = path.join(os.homedir(), '.config', '0-60')
 
-export const readConfig = once(
+export const readConfig: () => Promise<Config> = once(
   async (): Promise<Config> => {
     try {
       config = (yaml.safeLoad(await fs.readFile(configFile, 'utf8')): any)

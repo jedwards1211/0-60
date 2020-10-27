@@ -8,9 +8,9 @@ export type CircleCIConfig = {
   token: string,
 }
 
-const required = s => Boolean(s) || 'required'
+const required = (s) => Boolean(s) || 'required'
 
-const getCircleCIConfig = once(
+const getCircleCIConfig: () => Promise<CircleCIConfig> = once(
   async (): Promise<CircleCIConfig> => {
     try {
       const config = await readConfig()

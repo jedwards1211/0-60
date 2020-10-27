@@ -5,37 +5,19 @@
     "transform-export-extensions",
     "transform-object-rest-spread"
   ],
-  "presets": [
-    "flow"
-  ],
+  "presets": ["flow"],
   "env": {
     "test": {
-      "presets": [
-        ["env", {"targets": {"node": "current"}}],
-        "flow"
-      ],
-      "plugins": [
-        "transform-runtime"
-      ]
+      "presets": [["env", { "targets": { "node": "current" } }], "flow"],
+      "plugins": ["transform-runtime"]
     },
     "coverage": {
-      "presets": [
-        ["env", {"targets": {"node": "current"}}],
-        "flow"
-      ],
-      "plugins": [
-        "transform-runtime",
-        "istanbul"
-      ]
+      "presets": [["env", { "targets": { "node": "current" } }], "flow"],
+      "plugins": ["transform-runtime", "istanbul"]
     },
     "es5": {
-      "presets": [
-        ["env", {"forceAllTransforms": true}],
-        "stage-1", "flow"
-      ],
-      "plugins": [
-        "transform-runtime"
-      ]
-    },
+      "presets": [["env", { "forceAllTransforms": true }], "stage-1", "flow"],
+      "plugins": ["transform-runtime"]
+    }
   }
 }

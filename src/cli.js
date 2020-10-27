@@ -6,11 +6,14 @@ import { spawn as spawnRaw } from 'promisify-child-process'
 import inquirer from 'inquirer'
 import * as fs from 'fs-extra'
 import os from 'os'
-import fileExists from './fileExists'
-
 import installDeps from './installDeps'
+import isInGitRepo from './isInGitRepo'
+import createGitHubRepository from './createGitHubRepository'
+import setUpSkeleton from './setUpSkeleton'
+import setUpCircleCI from './setUpCircleCI'
+import setUpTravisCI from './setUpTravisCI'
 
-const required = s => Boolean(s) || 'required'
+const required = (s) => Boolean(s) || 'required'
 
 // our error handlers access the stdout and stderr of spawned processes, which
 // is not captured unless the encoding flag is provided.
@@ -20,91 +23,59 @@ const spawn = (cmd: string, args: Array<string> = [], opts: Object = {}) =>
 const configPromise = fs
   .readJson(path.join(os.homedir(), '.0-60.json'))
   .catch(() => ({}))
-const gitPromise = spawn('which', ['hub']).then(() => 'hub', () => 'git')
 
 async function cli(): Promise<void> {
-  const git = await gitPromise
-  let packageDirectory: string = process.cwd()
-  let remotes: Set<string> = new Set()
-  let hasSkeleton = 'clone' === process.argv[2]
+  const command = process.argv[2]
 
-  if (hasSkeleton) {
+  if (command === 'clone') {
     if (!process.argv[3]) {
       console.error('Usage: 0-60 clone <REPO URL>') // eslint-disable-line no-console
       process.exit(1)
     }
   }
 
-  if (!hasSkeleton) {
-    try {
-      remotes = new Set(
-        // $FlowFixMe
-        (await spawn(git, ['remote'], { maxBuffer: 1024 * 1024 })).stdout
-          .toString('utf8')
-          .split(/\r\n|\r|\n/gm)
-      )
-    } catch (error) {
-      // ignore
-    }
-  }
-
-  if (remotes.has('skeleton')) {
-    await spawn(git, ['diff-index', '--quiet', 'HEAD', '--']).catch(() => {
-      console.error(`Please commit your changes and re-run.`) // eslint-disable-line no-console
-      process.exit(1)
-    })
-    const { isPrivate } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'isPrivate',
-        message: 'Create private repository?',
-        default: false,
-      },
-    ])
-    await require('./createGitHubRepository').default(packageDirectory, {
-      private: isPrivate,
-    })
-    console.error('Pushing to GitHub...') // eslint-disable-line no-console
-    await spawn(git, ['push'], { stdio: 'inherit' })
-
-    if (
-      await fileExists(path.join(packageDirectory, '.circleci', 'config.yml'))
-    ) {
-      await require('./setUpCircleCI').default(packageDirectory)
-    } else if (await fileExists(path.join(packageDirectory, '.travis.yml'))) {
-      await require('./setUpTravisCI').default(packageDirectory)
-    }
+  if (
+    command === 'push' ||
+    (command !== 'clone' && (await isInGitRepo(process.cwd())))
+  ) {
+    await doPush()
   } else {
-    const {
-      skeleton,
-      directory,
-      name,
-      description,
-      author,
-      keywords,
-      organization,
-      repo,
-    } = await promptForSetUpSkeleton()
+    await doClone()
+  }
+}
 
-    await spawn(git, ['clone', skeleton, directory], {
-      stdio: 'inherit',
-    })
-    await require('./setUpSkeleton').default({
-      packageDirectory: directory,
-      name,
-      description,
-      author,
-      keywords,
-      git: {
-        organization,
-        repo,
-      },
-    })
+async function doPush(): Promise<void> {
+  await spawn('git', ['diff-index', '--quiet', 'HEAD', '--']).catch(
+    async () => {
+      const { continueAnyway } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'continueAnyway',
+          message: 'There are uncommited changes; do you want to push anyway?',
+          default: false,
+        },
+      ])
+      if (!continueAnyway) process.exit(1)
+    }
+  )
+  const { isPrivate } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'isPrivate',
+      message: 'Create private repository?',
+      default: false,
+    },
+  ])
+  await createGitHubRepository(process.cwd(), {
+    private: isPrivate,
+  })
+  console.error('Pushing to GitHub...') // eslint-disable-line no-console
+  await spawn('git', ['push'], { stdio: 'inherit' })
 
-    console.error('Installing dependencies...') // eslint-disable-line no-console
-    await installDeps({ packageDirectory: directory })
-
-    console.error('Ready to go!') // eslint-disable-line no-console
+  if (await fs.exists(path.join('.circleci', 'config.yml'))) {
+    await setUpCircleCI(process.cwd())
+  } else if (await fs.exists(path.join('.travis.yml'))) {
+    await setUpTravisCI(process.cwd())
   }
 }
 
@@ -124,11 +95,10 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
   let defaultAuthor
   try {
     // $FlowFixMe
-    defaultAuthor = (await spawn('git', ['config', 'user.name'], {
+    const { stdout } = await spawn('git', ['config', 'user.name'], {
       maxBuffer: 1024,
-    })).stdout
-      .toString('utf8')
-      .trim()
+    })
+    defaultAuthor = stdout.toString('utf8').trim()
   } catch (error) {
     // ignore
   }
@@ -167,8 +137,8 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
       type: 'input',
       name: 'keywords',
       message: 'Package keywords:',
-      filter: text => text.split(/\s*,\s*|\s+/g),
-      transformer: values =>
+      filter: (text) => text.split(/\s*,\s*|\s+/g),
+      transformer: (values) =>
         values instanceof Array ? values.join(',') : values,
     },
     {
@@ -240,6 +210,57 @@ async function promptForSetUpSkeleton(): Promise<SkeletonAnswers> {
   answers.directory = path.resolve(answers.directory)
   if (argvSkeleton) answers.skeleton = argvSkeleton
   return answers
+}
+
+async function doClone(): Promise<void> {
+  const git = await spawn('which', ['hub']).then(
+    () => 'hub',
+    () => 'git'
+  )
+
+  if (await isInGitRepo(process.cwd())) {
+    const { continueAnyway } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'continueAnyway',
+        message:
+          "You're already inside a git repo; do you want to clone a skeleton inside of it anyway?",
+        default: false,
+      },
+    ])
+    if (!continueAnyway) process.exit(1)
+  }
+
+  const {
+    skeleton,
+    directory,
+    name,
+    description,
+    author,
+    keywords,
+    organization,
+    repo,
+  } = await promptForSetUpSkeleton()
+
+  await spawn(git, ['clone', skeleton, directory], {
+    stdio: 'inherit',
+  })
+  await setUpSkeleton({
+    packageDirectory: directory,
+    name,
+    description,
+    author,
+    keywords,
+    git: {
+      organization,
+      repo,
+    },
+  })
+
+  console.error('Installing dependencies...') // eslint-disable-line no-console
+  await installDeps({ packageDirectory: directory })
+
+  console.error('Ready to go!') // eslint-disable-line no-console
 }
 
 cli().then(

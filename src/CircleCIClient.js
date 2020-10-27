@@ -84,4 +84,8 @@ class CircleCIClient {
   }
 }
 
-export default once(async () => new CircleCIClient(await getCircleCIConfig()))
+const getCircleCIClient: () => Promise<CircleCIClient> = once(
+  async () => new CircleCIClient(await getCircleCIConfig())
+)
+
+export default getCircleCIClient

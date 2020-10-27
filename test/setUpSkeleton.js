@@ -4,8 +4,6 @@ import { describe, beforeEach, afterEach, it } from 'mocha'
 import { expect } from 'chai'
 import setUpSkeleton from '../src/setUpSkeleton'
 import * as fs from 'fs-extra'
-import { promisify } from 'es6-promisify'
-import copy from 'copy'
 import path from 'path'
 import { spawn } from 'promisify-child-process'
 
@@ -14,11 +12,7 @@ const packageDirectory = path.join(__dirname, 'packageTest')
 describe('setUpSkeleton', () => {
   beforeEach(async () => {
     await fs.remove(packageDirectory)
-    await promisify(copy)(
-      path.join(__dirname, 'package', '**'),
-      packageDirectory,
-      { dot: true }
-    )
+    await fs.copy(path.join(__dirname, 'package'), packageDirectory)
     await spawn('git', ['init'], { cwd: packageDirectory })
     await spawn(
       'git',
@@ -31,12 +25,12 @@ describe('setUpSkeleton', () => {
       { cwd: packageDirectory }
     )
   })
-  afterEach(async function(): Promise<void> {
+  afterEach(async function (): Promise<void> {
     if (this.currentTest.state === 'passed') {
       await fs.remove(packageDirectory)
     }
   })
-  it(`works`, async function(): Promise<void> {
+  it(`works`, async function (): Promise<void> {
     const options = {
       packageDirectory,
       name: '@jedwards1211/test-package',

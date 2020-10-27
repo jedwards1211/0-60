@@ -9,6 +9,7 @@ function randomId(): string {
 }
 
 export default async function createSemanticReleaseGithubToken(
+  // $FlowFixMe
   octokit: Octokit
 ): Promise<string> {
   const response = await octokit.oauthAuthorizations.createAuthorization({
