@@ -26,8 +26,8 @@ npx 0-60
 
 ## Cloning a skeleton repository
 
-```sh
-0-60 clone <REPO URL>
+```
+0-60 clone <REPO URL>[#<BRANCH>]
 ```
 
 `0-60` will prompt you for the new package name, organization, etc:
@@ -73,7 +73,9 @@ Example `~/.0-60.json`:
     "jedwards1211/es2015-library-skeleton",
     "jedwards1211/react-library-skeleton",
     "jedwards1211/react-karma-library-skeleton",
-    "jedwards1211/untranspiled-js-library-skeleton"
+    "jedwards1211/untranspiled-js-library-skeleton",
+    "jedwards1211/typescript-library-skeleton",
+    "jedwards1211/typescript-library-skeleton#pnpm"
   ]
 }
 ```
@@ -85,6 +87,8 @@ $ 0-60
   jedwards1211/react-library-skeleton
   jedwards1211/react-karma-library-skeleton
   jedwards1211/untranspiled-js-library-skeleton
+  jedwards1211/typescript-library-skeleton
+  jedwards1211/typescript-library-skeleton#pnpm
 ```
 
 ## Preparing for CI build

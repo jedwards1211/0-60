@@ -231,8 +231,9 @@ async function doClone(): Promise<void> {
     if (!continueAnyway) process.exit(1)
   }
 
+  const prompt = await promptForSetUpSkeleton()
+  let { skeleton } = prompt
   const {
-    skeleton,
     directory,
     name,
     description,
@@ -240,11 +241,36 @@ async function doClone(): Promise<void> {
     keywords,
     organization,
     repo,
-  } = await promptForSetUpSkeleton()
+  } = prompt
 
-  await spawn(git, ['clone', skeleton, directory], {
-    stdio: 'inherit',
-  })
+  let branch
+  const branchMatch = /#([^#]+)$/.exec(skeleton)
+  if (branchMatch) {
+    skeleton = skeleton.substring(0, branchMatch.index)
+    branch = branchMatch[1]
+  }
+
+  await spawn(git, ['clone', skeleton, directory], { stdio: 'inherit' })
+  if (branch) {
+    const mainBranch = (await spawn(
+      git,
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      {
+        cwd: directory,
+        encoding: 'utf8',
+        maxBuffer: 10000,
+      }
+    ): any).stdout.trim(0)
+    await spawn(git, ['checkout', branch], { stdio: 'inherit', cwd: directory })
+    await spawn(git, ['branch', '-f', mainBranch, branch], {
+      stdio: 'inherit',
+      cwd: directory,
+    })
+    await spawn(git, ['checkout', mainBranch], {
+      stdio: 'inherit',
+      cwd: directory,
+    })
+  }
   await setUpSkeleton({
     packageDirectory: directory,
     name,
